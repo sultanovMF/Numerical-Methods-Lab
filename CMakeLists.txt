@@ -12,4 +12,5 @@ endif(CCACHE_FOUND)
 
 add_subdirectory(labs)
 add_subdirectory(murlib)
+add_subdirectory(tests)
 add_subdirectory(dependencies)

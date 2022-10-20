@@ -6,6 +6,7 @@
 #include <murlib/interpolation.h>
 #include <murlib/matrix_solver.h>
 #include <murlib/approximation.h>
+#include <murlib/miscellaneous.h>
 
 // Библиотеки для вывода графиков/табличек
 #include <SFML/Graphics/RenderWindow.hpp>
