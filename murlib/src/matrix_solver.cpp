@@ -77,3 +77,38 @@ void murlib::solve_gauss(const unsigned int n, double* A, double* b, double* x) 
 		x[i] += b[i];
 	}
 }
+
+void murlib::lu_decompostion(const unsigned int n, double* A, double* L, double* U) {
+	for (int i = 0; i < n * n; ++i) {
+		L[i] = 0;
+		U[i] = 0;
+	}
+
+	for (int i = 0; i < n; ++i) {
+		L[i * n] = A[i * n];
+		U[i] = A[i] / L[0];
+	}
+
+	for (int i = 1; i < n; i++)
+	{
+		for (int j = i; j < n; j++)
+		{
+			U[i * n + j] = A[i * n + j];
+
+			for (int k = 0; k < i; k++)
+			{
+				U[i * n + j] -= L[i *n + k] * U[k * n + j];
+			}
+
+			L[j * n + i] = A[j * n + i];/* getSumL(n, i, j, mL, mU)) / mU[i][i];*/
+
+			for (int k = 0; k < i; k++)
+			{
+				L[j * n + i] -= L[j*n+k] * U[k * n + i];
+			}
+
+			L[j * n + i] /= U[i * n + i];
+		}
+	}
+
+}
