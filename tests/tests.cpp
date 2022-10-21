@@ -5,7 +5,7 @@
 const double EPSILON = 0.0001;
 
 // Matrix solver algorithms tests
-TEST_CASE("the tridiagonal matrix solver") {
+TEST_CASE("the tridiagonal system solver") {
     double A[4] = { 0, 1, 1, 1 };
     double B[4] = { 2, 10, -5, 4 };
     double C[4] = { 1, -5, 2, 0 };
@@ -19,7 +19,7 @@ TEST_CASE("the tridiagonal matrix solver") {
         CHECK(fabs(target_x[i] - X[i]) < EPSILON);
     }
 }
-TEST_CASE("gauss elimination matrix solver") {
+TEST_CASE("gauss elimination system solver") {
     double A[9] = { 1,	2,	3,
                     2,	2,	1,
                     1,	2,	2 };    
@@ -33,7 +33,7 @@ TEST_CASE("gauss elimination matrix solver") {
         CHECK(fabs(target_x[i] - X[i]) < EPSILON);
     }
 }
-TEST_CASE("gauss elimination matrix solver with zero pivot element") {
+TEST_CASE("gauss elimination system solver with zero pivot element") {
     double A[9] = { 0,	2,	1,
                     1,	1,	1,
                     1,	1,	2	};
@@ -47,7 +47,7 @@ TEST_CASE("gauss elimination matrix solver with zero pivot element") {
         CHECK(fabs(target_x[i] - X[i]) < EPSILON);
     }
 }
-TEST_CASE("gauss elimination matrix solver when det(A) = 0") {
+TEST_CASE("gauss elimination system solver when det(A) = 0") {
     double A[9] = { 0,	2,	1,
                     0,	1,	1,
                     0,	1,	2 };
@@ -85,12 +85,30 @@ TEST_CASE("lu decompostion") {
         0., -2, -5,
         0., 0., -1
     };
-    std::cout << std::fixed << 9.2559631349317831e+61 << std::endl;
 
     for (int i = 0; i < 9; ++i) {
         CHECK(abs(L_target[i] - L[i]) < EPSILON);
     }
     for (int i = 0; i < 9; ++i) {
         CHECK(abs(U_target[i] - U[i]) < EPSILON);
+    }
+}
+TEST_CASE("lu system solver") {
+    double A[9] = { 1,	2,	3,
+                    2,	2,	1,
+                    1,	2,	2 };
+    double b[3] = { 1, 0, 1 };
+    double X[3];
+
+    double L[9];
+    double U[9];
+
+    murlib::lu_decompostion(3, A, L, U);
+    murlib::solve_lu(3, L, U, b, X);
+
+
+    double target_x[] = { -1, 1, 0 };
+    for (int i = 0; i < 3; ++i) {
+        CHECK(fabs(target_x[i] - X[i]) < EPSILON);
     }
 }
