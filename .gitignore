@@ -12,4 +12,3 @@ _deps
 
 .vs
 out/
-!out/*.pdf
