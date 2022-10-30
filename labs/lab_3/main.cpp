@@ -42,15 +42,15 @@ const double end_2 = 2;
 void print_matrix(const int n, const double* matrix) {
     for (int j = 0; j < n; ++j) {
         for (int k = 0; k < n; ++k) {
-            std::cout << std::fixed << std::setprecision(2) << std::setw(6) << matrix[j * n + k] << ",\t";
+            std::cout << std::fixed << std::setprecision(2) << std::setw(5) << matrix[j * n + k] << "&";
         }
-        std::cout << "\n";
+        std::cout << "\\\\\n";
     }
 }
 
 void print_vector(const int n, const double* vec) {
     for (int k = 0; k < n; ++k) {
-        std::cout << std::fixed << std::setprecision(2) << std::setw(6) << vec[ k] << ", ";
+        std::cout << std::fixed << std::setprecision(2) << std::setw(6) << vec[ k] << "\\\\";
     }
     std::cout << "\n";
 }
@@ -150,12 +150,17 @@ int main() {
     int best_deg = 1;
     int least_sqr_deg = 1;
     // Метод наименьших квадратов
+    
     {
         build_grid_xi(0, 2, test_grid_2, grid_size_1);
         build_grid_xi(0, 2, least_sqr_point_xi, 20);
+        std::cout << "ADKAS}D LEAST SQUARES POINTS\n";
         for (int i = 0; i < 20; ++i) {
             least_sqr_point_yi[i] = individual_func(least_sqr_point_xi[i]);
+            std::cout << "(" << least_sqr_point_xi[i] << "," << least_sqr_point_yi[i] << "),";
         }
+
+        std::cout << "\n??????????????????????? LEASET SQUARE COEF" << std::endl;
         for (least_sqr_deg; least_sqr_deg <= 12; ++least_sqr_deg) {
             double* A = new double[least_sqr_deg * least_sqr_deg];
             double* b = new double[least_sqr_deg];
@@ -187,6 +192,11 @@ int main() {
                 best_r = current_max;
                 best_deg = least_sqr_deg;
             }
+            std::cout << least_sqr_deg << ": ";
+            for (int i = 0; i < least_sqr_deg; ++i) {
+                std::cout  << std::setprecision(6) <<  coef[i] << "x^" << i << " ";
+            }
+            std::cout << std::endl;
             delete[] A;
             delete[] b;
             delete[] S;
@@ -199,10 +209,10 @@ int main() {
     std::cout << std::endl;
     
     // Пятидиагональная прогонка
-    // Скорее всего неверно составлена система или выводится матрица
+   
     using Random = effolkronium::random_static;
     {
-        const int n = 10;
+        const int n = 8;
         double M[n * n];
         std::fill(M, M + n * n, 0);
         double A[n];
@@ -214,40 +224,40 @@ int main() {
 
         A[0] = 0;
         A[1] = 0;
-        A[n-1] = Random::get(-10, 10);
-        A[n-2] = Random::get(-10, 10);
-
-        B[0] = 0;
-        B[1] =   Random::get(-10, 10);
-        B[n-1] = Random::get(-10, 10);
-        B[n-2] = Random::get(-10, 10);
-
-        C[0] =   Random::get(-10, 10);
-        C[1] =   Random::get(-10, 10);
-        C[n-1] = Random::get(-10, 10);
-        C[n-2] = Random::get(-10, 10);
-
-        D[0] =   Random::get(-10, 10);
-        D[1] =   Random::get(-10, 10);
-        D[n - 1] = 0;
-        D[n-2] = Random::get(-10, 10);
-
-        E[0] = Random::get(-10, 10);
-        E[1] = Random::get(-10, 10);
+        A[n-1] = Random::get(1, 10);
+        A[n-2] = Random::get(1, 10);
+                             
+        B[0] = 0;            
+        B[1] =   Random::get(1, 10);
+        B[n-1] = Random::get(1, 10);
+        B[n-2] = Random::get(1, 10);
+                             
+        C[0] =   Random::get(1, 10);
+        C[1] =   Random::get(1, 10);
+        C[n-1] = Random::get(1, 10);
+        C[n-2] = Random::get(1, 10);
+                             
+        D[0] =   Random::get(1, 10);
+        D[1] =   Random::get(1, 10);
+        D[n - 1] = 0;        
+        D[n-2] = Random::get(1, 10);
+                             
+        E[0] =   Random::get(1, 10);
+        E[1] =   Random::get(1, 10);
         E[n - 1] = 0;
         E[n - 2] = 0;
 
-        F[0] = Random::get(-10, 10);
-        F[1] = Random::get(-10, 10);
-        F[n-1] = Random::get(-10, 10);
-        F[n-2] = Random::get(-10, 10);
+        F[0] =  Random::get(1, 10);
+        F[1] =  Random::get(1, 10);
+        F[n-1] =Random::get(1, 10);
+        F[n-2] =Random::get(1, 10);
         for (int i = 2; i < n-2; ++i) {
-            A[i] = Random::get(-10, 10);
-            B[i] = Random::get(-10, 10);
-            C[i] = Random::get(-10, 10);
-            D[i] = Random::get(-10, 10);
-            E[i] = Random::get(-10, 10);
-            F[i] = Random::get(-10, 10);
+        A[i] = Random::get(1, 10);
+        B[i] = Random::get(1, 10);
+        C[i] = Random::get(1, 10);
+        D[i] = Random::get(1, 10);
+        E[i] = Random::get(1, 10);
+        F[i] = Random::get(1, 10);
         }
         double X[n];
 
@@ -268,7 +278,7 @@ int main() {
             M[i * n + i - 1] = B[i];
             M[i * n + i] = C[i];
             M[i * n + i + 1] = D[i];
-            M[i * n + i + 1] = E[i];
+            M[i * n + i + 2] = E[i];
         }
 
         M[n * (n - 1) - 4] = A[n-2];
@@ -285,6 +295,10 @@ int main() {
         print_vector(n, F);
         std::cout << "SOL: ";
         print_vector(n, X);
+        std::cout << "SOL GAUSS: ";
+        murlib::solve_gauss(n, M, F, X);
+        print_vector(n, X);
+       
     }
     
     
