@@ -25,3 +25,5 @@ FetchContent_Declare(
 add_subdirectory(imgui-sfml)
 
 add_subdirectory(implot)
+
+add_subdirectory(random)

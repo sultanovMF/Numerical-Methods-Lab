@@ -1,10 +1,29 @@
-#pragma once
 
 #include <cmath>
 #include <stdexcept>
 
 #include "murlib/matrix_solver.h"
 #include "murlib/miscellaneous.h"
+
+void backward_up(const unsigned int n, double* U, double* b, double* x) {
+	for (int i = n - 1; i >= 0; --i) {
+		x[i] = b[i];
+		for (int j = i + 1; j < n; ++j) {
+			x[i] -= U[j + i * n] * x[j];
+		}
+		x[i] /= U[i + i * n];
+	}
+}
+
+void backward_low(const unsigned int n, double* L, double* b, double* y) {
+	for (int i = 0; i < n; ++i) {
+		y[i] = b[i];
+		for (int j = 0; j < i; ++j) {
+			y[i] -= L[i * n + j] * y[j];
+		}
+		y[i] /= L[i + i * n];
+	}
+}
 
 void murlib::tridiagonal_matrix(const int n, const double* A, const double* B, const double* C, const double* D, double* X) {
 	// Еще есть алгоритм быстрее где можно изменять А б с
@@ -27,7 +46,6 @@ void murlib::tridiagonal_matrix(const int n, const double* A, const double* B, c
 	delete[] P;
 	delete[] Q;
 }
-
 void murlib::solve_gauss(const unsigned int n, double* A, double* b, double* x) {
 	// не учитывает что могут быть пустые строки в матрице
 	// forward
@@ -77,7 +95,6 @@ void murlib::solve_gauss(const unsigned int n, double* A, double* b, double* x) 
 		x[i] += b[i];
 	}
 }
-
 void murlib::lu_decompostion(const unsigned int n, double* A, double* L, double* U) {
 	for (int i = 0; i < n * n; ++i) {
 		L[i] = 0;
@@ -100,7 +117,7 @@ void murlib::lu_decompostion(const unsigned int n, double* A, double* L, double*
 				U[i * n + j] -= L[i *n + k] * U[k * n + j];
 			}
 
-			L[j * n + i] = A[j * n + i];/* getSumL(n, i, j, mL, mU)) / mU[i][i];*/
+			L[j * n + i] = A[j * n + i];
 
 			for (int k = 0; k < i; k++)
 			{
@@ -112,43 +129,103 @@ void murlib::lu_decompostion(const unsigned int n, double* A, double* L, double*
 	}
 
 }
-
 void murlib::solve_lu(const unsigned int n, double* L, double* U, double* b, double* x) {
 	double* y = new double[n];
-
-	for (int i = 0; i < n; ++i) {
-		y[i] = b[i];
-		for (int j = 0; j < i; ++j) {
-			y[i] -= L[i * n + j] * y[j];
-		}
-		y[i] /= L[i + i * n];
-	}
-
-	//for (int i = n - 1; i >= 0; --i) {
-	//	x[i] = y[i];
-
-	//	for (int j = i + 1; j < n; ++j) {
-	//		x[i] -= U[i * n + j] * x[j];
-	//	}
-
-
-	//}
-	for (int i = 0; i < n; ++i) {
-		double pivot = U[i * n + i];
-		for (int j = i; j < n; ++j) {
-			U[i * n + j] /= pivot;
-		}
-		y[i] /= pivot;
-	}
-
-	for (int i = n - 1; i >= 0; --i) {
-		x[i] = y[i];
-		for (int j = i + 1; j < n; ++j) {
-			x[i] -= U[j + i * n] * x[j];
-		}
-	}
-	//1 2 3
-	//0 -2 -5
-	//0 0 -1
+	backward_low(n, L, b, y);
+	backward_up(n, U, y, x);
 	delete[] y;
+}
+void murlib::transpose(const unsigned int n, double* A, double* AT) {
+	std::copy(A, A + n*n, AT);
+	for (int i = 0; i < n; ++i) {
+		for (int j = i + 1; j < n; ++j) {
+			std::swap(AT[i * n + j], AT[j * n + i]);
+		}
+	}
+}
+
+void murlib::sqroot_decompostion(const unsigned int n, double* A, double* S) {
+	std::fill(S, S + n * n, 0.);
+	for (int i = 0; i < n; ++i) {
+		S[i + i * n] = A[i + i * n];
+
+		for (int p = 0; p < i; ++p) {
+			S[i + i * n] -= S[i * n + p] * S[i * n + p];
+		}
+
+		S[i + i * n] = std::sqrt(S[i + i * n]);
+
+		for (int j = i + 1; j < n; ++j) {
+			S[j * n + i] = A[j * n + i];
+
+			for (int p = 0; p < i; ++p) {
+				S[j * n + i] -= S[i * n + p] * S[j * n + p];
+			}
+
+			S[j * n + i] /= S[i + i * n];
+		}
+	}
+}
+
+void murlib::sqroot_solve(const unsigned int n, double* S, double*b, double* x) {
+	double* ST = new double[n * n];
+	transpose(n, S, ST);
+
+	double* y = new double[n];
+	backward_low(n, S, b, y); //-59 -33 -12
+
+
+	backward_up(n, ST, y, x);
+	delete[] y;
+	delete[] ST;
+}
+
+
+void murlib::pentadiagonal_matrix(
+	const int n,
+	const double* A,
+	const double* B,
+	const double* C,
+	const double* D,
+	const double* E,
+	const double* F,
+	double* x) {
+
+	double* alpha = new double	[n];
+	double* beta = new double	[n];
+	double* gamma = new double	[n];
+	double z;
+
+	z = C[0];
+	alpha[0] = -D[0] / z;
+	beta[0]	 = -E[0] / z;
+	gamma[0] =  F[0] / z;
+
+	z = B[1] * alpha[0] + C[1];
+	alpha[1] = -(B[1] * beta[0] + D[1]) / z;
+	beta[1]  = -(E[1] / z);
+	gamma[1] = (F[1] - B[1] * gamma[0]) / z;
+
+	for (int i = 2; i < n; ++i) {
+		// Вообще говоря, здесь идет лишний счет, TODO переделай!!!
+		z = A[i] * alpha[i - 2] * alpha[i - 1] + A[i] * beta[i - 2] + B[i] * alpha[i - 1] + C[i];
+		alpha[i] = -(A[i] * alpha[i - 2] * beta[i - 1] + B[i] * beta[i - 1] + D[i]) / z;
+		beta[i]  = -(E[i]) / z;
+		gamma[i] = (F[i] - (A[i] * alpha[i - 2] * gamma[i - 1] + A[i] * gamma[i - 2] + B[i] * gamma[i - 1])) / z;
+	}
+
+	z = (A[n - 1] * alpha[n - 3] * alpha[n - 2] + A[n - 1] * beta[n - 3] + B[n - 1] * alpha[n - 2] + C[n - 1]);
+	
+	x[n - 1] = (F[n - 1] - (A[n - 1] * alpha[n - 3] * gamma[n - 2] + A[n-1] * gamma[n - 3] + B[n - 1] * gamma[n - 2]))
+		/ (A[n - 1] * alpha[n - 3] * alpha[n - 2] + A[n - 1] * beta[n - 3] + B[n - 1] * alpha[n - 2] + C[n - 1]);
+	// n = 6
+	x[n - 2] = alpha[n - 2] * x[n - 1] + gamma[n - 2];
+
+	for (int i = n - 3; i >= 0; --i) {
+		x[i] = alpha[i] * x[i + 1] + beta[i] * x[i + 2] + gamma[i];
+	}
+
+	delete[] alpha;
+	delete[] beta;
+	delete[] gamma;
 }

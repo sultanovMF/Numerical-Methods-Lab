@@ -1,4 +1,3 @@
-#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -128,4 +127,38 @@ void murlib::build_splines(const int n, double* A, double* B, double* C, double*
 	delete[] CC;
 	delete[] DD;
 	delete[] CCC;
+}
+
+
+void murlib::build_fracrat_system(const int n, const double* x,const double* y, const int p, double* A, double* b) {
+	// n число точек
+	// p + q + 1= n
+	// dim A = n
+
+	for (int i = 0; i < n; ++i) {
+		int col = 0;
+		for (int j = 0; j <= p; ++j, ++col) {
+			A[i * n + col] = std::pow(x[i], j);
+		}
+		for (int j = p+1; j < n; ++j, ++col) {
+			A[i * n + col] = -y[i] * std::pow(x[i], j - p);
+		}
+
+		b[i] = y[i];
+	}
+}
+
+double murlib::fracrat_interp(const int n, const int p, const double* coef, const double x) {
+	double numerator = 0.;
+	double denominator = 1.;
+
+	for (int i = 0; i <= p; ++i) {
+		numerator += coef[i] * pow(x, i);
+	}
+	for (int i = p + 1; i < n; ++i) {
+		denominator += coef[i] * pow(x, i - p);
+	}
+
+	return numerator / denominator;
+
 }

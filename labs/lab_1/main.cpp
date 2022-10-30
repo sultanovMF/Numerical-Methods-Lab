@@ -20,9 +20,9 @@
 
 
 //* Константы и функции индивидуального задания:
-//* Отрезок, на котором происходит интерполяция/апроксимация
+//* Отрезок, на котором происходит интерполяция/аппроксимация
 const double a = 0, b = 2;
-//* Рекоммендованное значение ошибки
+//* Рекомендованное значение ошибки
 const double delta = 10e-3;
 //* Размер контрольной сетки
 const int grid_size = 1000;
@@ -33,15 +33,15 @@ double individual_func(double x) {
     return std::atan(x) / (1 + x * x);
 };
 
-constexpr double normilize(const double x) {
+double normilize(const double x) {
     return 2 * murlib::PI / (b - a) * (x - a);
 }
 
-constexpr double unnormilize(const double x) {
+double unnormilize(const double x) {
     return (b - a) / (2 * murlib::PI) * x + a;
 }
 
-const double P(double x) {
+double P(double x) {
     // deg P = 20
     return 0.5353981636e0 - 0.1426990818 * x - 0.1786504591 * pow
     (x - 0.1e1, 2) + 0.2916666667e0 * pow(x - 0.1e1, 3) -
@@ -79,6 +79,8 @@ int main() {
             P_yi[i] = mnrp_result_yi[i];
         }
         double mnrp_el= *std::max_element(mnrp_error, mnrp_error + grid_size);
+
+
         if (mnrp_el > delta) {
             mnrp_best_degree = i + 1;
             break;
@@ -111,9 +113,9 @@ int main() {
         double spline_current_max_error = 0;
         for (int i = 0; i < grid_size; ++i) {
             spline_test_yi[i] = murlib::spline_iterpolation(spline_count, A, B, C, D, spline_xi, spline_zone, test_xi[i]);
-            spline_error_data[i] = abs(spline_test_yi[i] - target_yi[i]);
-            if (abs(spline_test_yi[i] - target_yi[i]) > spline_current_max_error) {
-                spline_current_max_error = abs(spline_test_yi[i] - target_yi[i]);
+            spline_error_data[i] = std::abs(spline_test_yi[i] - target_yi[i]);
+            if (std::abs(spline_test_yi[i] - target_yi[i]) > spline_current_max_error) {
+                spline_current_max_error = std::abs(spline_test_yi[i] - target_yi[i]);
                 
             }
 
@@ -152,15 +154,15 @@ int main() {
 
     for (int i = 0; i < grid_size; ++i) {
         for (int n = 1; n <= max_points_number; ++n) {
-            lagrange_test_yi[n-1][i] = murlib::lagrange_polynom(lagrange_xi[n-1], lagrange_yi[n - 1], test_xi[i], n+1);
-            lagrange_error[n-1][i] = abs(lagrange_test_yi[n-1][i] - target_yi[i]);
+            lagrange_test_yi[n-1][i] = murlib::lagrange_polynom(lagrange_xi[n-1], lagrange_yi[n - 1], test_xi[i], n); //n+1
+            lagrange_error[n-1][i] = std::abs(lagrange_test_yi[n-1][i] - target_yi[i]);
         }
     }
 
     double lagrange_max_error[max_points_number];
     std::cout << "Lagrange error" << std::endl;
     for (int n = 0; n < max_points_number; n++) {
-        auto max_element = std::max_element(lagrange_error[n], lagrange_error[n] + grid_size);
+        double* max_element = std::max_element(lagrange_error[n], lagrange_error[n] + grid_size);
         lagrange_max_error[n] = *max_element;
         std::cout << n+1 << "\t" << lagrange_max_error[n] << std::endl;
     }
@@ -182,8 +184,8 @@ int main() {
     double chebyshev_max_error = 0;
     for (int i = 0; i < grid_size; ++i) {
         chebyshev_test_yi[i] = murlib::lagrange_polynom(chebyshev_grid_xi, chebyshev_grid_yi, test_xi[i], lagrange_best_error_index + 1);
-        if (abs(chebyshev_test_yi[i] - target_yi[i]) > chebyshev_max_error) {
-            chebyshev_max_error = abs(chebyshev_test_yi[i] - target_yi[i]);
+        if (std::abs(chebyshev_test_yi[i] - target_yi[i]) > chebyshev_max_error) {
+            chebyshev_max_error = std::abs(chebyshev_test_yi[i] - target_yi[i]);
         }
     }
 
@@ -209,8 +211,8 @@ int main() {
                 lagrange_xi[lagrange_best_error_index], v, test_xi[i], points_number
             );
 
-            if (abs(newton_test_yi[i] - target_yi[i]) > newton_error) {
-                newton_error = abs(newton_test_yi[i] - target_yi[i]);
+            if (std::abs(newton_test_yi[i] - target_yi[i]) > newton_error) {
+                newton_error = std::abs(newton_test_yi[i] - target_yi[i]);
             }
         }
 
@@ -233,25 +235,25 @@ int main() {
         double* trigonometry_yi = new double[trig_point_number];
 
         for (int i = 0; i < trig_point_number; ++i) {
-            trigonometry_xi[i] = i * (2 * murlib::PI) / (trig_point_number);    
+            trigonometry_xi[i] = i * (2 * murlib::PI) / (trig_point_number);
             trigonometry_yi[i] = individual_func(unnormilize(trigonometry_xi[i]));
         }
         double trigonometry_current_error = 0;
         for (int i = 0; i < grid_size; ++i) {
             trigonometry_test_yi[i] = murlib::trigonometric_polynom(normilize(test_xi[i]), trigonometry_xi, trigonometry_yi, trig_degree);
-            trigonometry_error_data[i] = (abs(trigonometry_test_yi[i] - target_yi[i]));
-            if ((abs(trigonometry_test_yi[i] - target_yi[i]) > trigonometry_current_error) && (test_xi[i] < unnormilize(trigonometry_xi[trig_point_number-1]))) {
-                trigonometry_current_error = abs(trigonometry_test_yi[i] - target_yi[i]);
+            trigonometry_error_data[i] = (std::abs(trigonometry_test_yi[i] - target_yi[i]));
+            if ((std::abs(trigonometry_test_yi[i] - target_yi[i]) > trigonometry_current_error) && (test_xi[i] < unnormilize(trigonometry_xi[trig_point_number-1]))) {
+                trigonometry_current_error = std::abs(trigonometry_test_yi[i] - target_yi[i]);
             }
         }
-        
+
         delete[] trigonometry_xi;
         delete[] trigonometry_yi;
         trigonometry_error = trigonometry_current_error;
        // std::cout << trig_degree << " " << trigonometry_error << std::endl;
         trig_degree++;
     }
-    
+
     //const int trig_degree = 201;
     //const int trig_point_number = trig_degree * 2 + 1;
     //double trigonometry_xi[trig_point_number];
@@ -348,9 +350,8 @@ int main() {
 
 
             ImGui::EndTable();
-
-
         }
+
         ImGui::SliderInt("Degree of polynom", &current_plot_degree, 0, max_points_number - 1);
         if (ImGui::BeginTable("Interpolations", 2)) {
             ImGui::TableNextColumn();

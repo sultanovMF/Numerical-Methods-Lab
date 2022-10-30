@@ -1,5 +1,3 @@
-#pragma once
-
 #include <iostream>
 #include <functional>
 
@@ -25,6 +23,6 @@ void murlib::mnrp_for_polynoms(const std::function<double(double)> f, const int 
 	double max_error = 0;
 	for (int i = 0; i < test_grid_size; ++i) {
 		result_yi[i] = murlib::lagrange_polynom(chebyshev_grid_xi, chebyshev_grid_yi, grid_xi[i], n);
-		error[i] = abs(f(grid_xi[i]) - result_yi[i]);
+		error[i] = std::abs(f(grid_xi[i]) - result_yi[i]);
 	}
 }

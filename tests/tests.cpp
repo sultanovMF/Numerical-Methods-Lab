@@ -16,7 +16,7 @@ TEST_CASE("the tridiagonal system solver") {
 
     double target_x[] = { -3, 1, 5, -8 };
     for (int i = 0; i < 4; ++i) {
-        CHECK(fabs(target_x[i] - X[i]) < EPSILON);
+        CHECK(EPSILON > fabs(target_x[i] - X[i]));
     }
 }
 TEST_CASE("gauss elimination system solver") {
@@ -30,7 +30,7 @@ TEST_CASE("gauss elimination system solver") {
 
     double target_x[] = { -1, 1, 0 };
     for (int i = 0; i < 3; ++i) {
-        CHECK(fabs(target_x[i] - X[i]) < EPSILON);
+        CHECK(abs(target_x[i] - X[i]) < EPSILON);
     }
 }
 TEST_CASE("gauss elimination system solver with zero pivot element") {
@@ -109,6 +109,68 @@ TEST_CASE("lu system solver") {
 
     double target_x[] = { -1, 1, 0 };
     for (int i = 0; i < 3; ++i) {
-        CHECK(fabs(target_x[i] - X[i]) < EPSILON);
+        CHECK(abs(target_x[i] - X[i]) < EPSILON);
+    }
+}
+
+TEST_CASE("sqr decomposition") {
+    double A[9] = { 81, -45, 45,
+                    -45, 50, - 15,
+                    45, -15, 38 };
+
+    double S[9];
+
+    int n = 3;
+
+    murlib::sqroot_decompostion(n, A, S);
+
+    double target_S[9] = {
+         9,	0,	0,
+        -5,	5,	0,
+         5,	2,	3
+    };
+    for (int i = 0; i < 3; ++i) {
+        CHECK(abs(target_S[i] - S[i]) < EPSILON);
+    }
+}
+
+TEST_CASE("sqr decompositon solve matrix") {
+    double A[9] = { 81, -45, 45,
+                    -45, 50, -15,
+                    45, -15, 38 };
+    double b[3] = { 531, -460, 193 };
+    double S[9];
+    
+    int n = 3;
+
+    murlib::sqroot_decompostion(n, A, S);
+
+    double x[3];
+    murlib::sqroot_solve(n, S, b, x);
+    double target_x[3] = {6, -5, -4};
+    for (int i = 0; i < 3; ++i) {
+        CHECK(abs(target_x[i] - x[i]) < EPSILON);
+    }
+}
+
+TEST_CASE("pentadiagonal matrix") {
+    const int n = 6;
+
+    double A[n] = {0, 0, 1, 1, 1, 1};
+    double B[n] = {0, -4, -4, -4, -4, -2 };
+    double C[n] = { 9, 6, 6, 6, 5, 1 };
+    double D[n] = { -4, -4, -4, -4, -2, 0 };
+    double E[n] = { 1, 1, 1, 1, 0, 0 };
+
+    double F[n] = { 6, -1, 0, 0, 0, 0 };
+
+    double X[n];
+
+    murlib::pentadiagonal_matrix(n, A, B, C, D, E, F, X);
+
+
+    double target_x[n] = { 1, 1, 1, 1, 1, 1 };
+    for (int i = 0; i < 3; ++i) {
+        CHECK(abs(target_x[i] - X[i]) < EPSILON);
     }
 }
