@@ -25,7 +25,7 @@ const double a = 0, b = 2;
 //* Рекомендованное значение ошибки
 const double delta = 10e-3;
 //* Размер контрольной сетки
-const int grid_size = 1000;
+const int test_grid_size = 1000;
 //* Максимальная степень многочлен
 const int max_points_number = 15;
 //* Функция, которую требуется аппроксимировать
@@ -61,24 +61,24 @@ double P(double x) {
 int main() {
 
     // Создание тестовой сетки
-    double test_xi[grid_size];
-    double target_yi[grid_size];
-    double P_yi[grid_size];
-    for (int i = 0; i < grid_size; ++i) {
-        test_xi[i] = a + (b - a) / (grid_size) * i;
+    double test_xi[test_grid_size];
+    double target_yi[test_grid_size];
+    double P_yi[test_grid_size];
+    for (int i = 0; i < test_grid_size; ++i) {
+        test_xi[i] = a + (b - a) / (test_grid_size) * i;
         target_yi[i] = individual_func(test_xi[i]);
         P_yi[i] = P(test_xi[i]);
     }
     // МНРП!
-    double mnrp_result_yi[grid_size];
-    double mnrp_error[grid_size];
+    double mnrp_result_yi[test_grid_size];
+    double mnrp_error[test_grid_size];
     int mnrp_best_degree = 20;
     for (int i = mnrp_best_degree; i >= 0; --i) {
-        murlib::mnrp_for_polynoms(P, i, a, b, grid_size, test_xi, mnrp_result_yi, mnrp_error);
-        for (int i = 0; i < grid_size; ++i) {
+        murlib::mnrp_for_polynoms(P, i, a, b, test_grid_size, test_xi, mnrp_result_yi, mnrp_error);
+        for (int i = 0; i < test_grid_size; ++i) {
             P_yi[i] = mnrp_result_yi[i];
         }
-        double mnrp_el= *std::max_element(mnrp_error, mnrp_error + grid_size);
+        double mnrp_el= *std::max_element(mnrp_error, mnrp_error + test_grid_size);
 
 
         if (mnrp_el > delta) {
@@ -88,9 +88,9 @@ int main() {
     }
     // Интерполяция сплайнами
     int spline_count = 2;
-    double spline_test_yi[grid_size];
+    double spline_test_yi[test_grid_size];
     double spline_error = 10000;
-    double spline_error_data[grid_size];
+    double spline_error_data[test_grid_size];
     while (spline_error > delta && spline_count < 100) {
         double* A = new double[spline_count];
         double* B = new double[spline_count];
@@ -111,7 +111,7 @@ int main() {
 
         int spline_zone = 0;
         double spline_current_max_error = 0;
-        for (int i = 0; i < grid_size; ++i) {
+        for (int i = 0; i < test_grid_size; ++i) {
             spline_test_yi[i] = murlib::spline_iterpolation(spline_count, A, B, C, D, spline_xi, spline_zone, test_xi[i]);
             spline_error_data[i] = std::abs(spline_test_yi[i] - target_yi[i]);
             if (std::abs(spline_test_yi[i] - target_yi[i]) > spline_current_max_error) {
@@ -119,7 +119,7 @@ int main() {
                 
             }
 
-            if (test_xi[i + 1] > (a + (b-a) / spline_count * (spline_zone + 1)) && (i < grid_size - 1)) {
+            if (test_xi[i + 1] > (a + (b-a) / spline_count * (spline_zone + 1)) && (i < test_grid_size - 1)) {
                 spline_zone++;
             }
 
@@ -147,12 +147,12 @@ int main() {
         }
     }
 
-    double lagrange_test_yi[max_points_number][grid_size];
+    double lagrange_test_yi[max_points_number][test_grid_size];
 
-    double lagrange_error[max_points_number][grid_size];
+    double lagrange_error[max_points_number][test_grid_size];
     int lagrange_best_error_index;
 
-    for (int i = 0; i < grid_size; ++i) {
+    for (int i = 0; i < test_grid_size; ++i) {
         for (int n = 1; n <= max_points_number; ++n) {
             lagrange_test_yi[n-1][i] = murlib::lagrange_polynom(lagrange_xi[n-1], lagrange_yi[n - 1], test_xi[i], n); //n+1
             lagrange_error[n-1][i] = std::abs(lagrange_test_yi[n-1][i] - target_yi[i]);
@@ -162,7 +162,7 @@ int main() {
     double lagrange_max_error[max_points_number];
     std::cout << "Lagrange error" << std::endl;
     for (int n = 0; n < max_points_number; n++) {
-        double* max_element = std::max_element(lagrange_error[n], lagrange_error[n] + grid_size);
+        double* max_element = std::max_element(lagrange_error[n], lagrange_error[n] + test_grid_size);
         lagrange_max_error[n] = *max_element;
         std::cout << n+1 << "\t" << lagrange_max_error[n] << std::endl;
     }
@@ -180,9 +180,9 @@ int main() {
         chebyshev_grid_xi[i] = murlib::get_chebyshev_root(a, b, lagrange_best_error_index + 1, i);
         chebyshev_grid_yi[i] = individual_func(chebyshev_grid_xi[i]);
     }
-    double chebyshev_test_yi[grid_size];
+    double chebyshev_test_yi[test_grid_size];
     double chebyshev_max_error = 0;
-    for (int i = 0; i < grid_size; ++i) {
+    for (int i = 0; i < test_grid_size; ++i) {
         chebyshev_test_yi[i] = murlib::lagrange_polynom(chebyshev_grid_xi, chebyshev_grid_yi, test_xi[i], lagrange_best_error_index + 1);
         if (std::abs(chebyshev_test_yi[i] - target_yi[i]) > chebyshev_max_error) {
             chebyshev_max_error = std::abs(chebyshev_test_yi[i] - target_yi[i]);
@@ -190,7 +190,7 @@ int main() {
     }
 
     ///// Интерполяция полиномом Ньютона (разделенные разности)
-    double newton_test_yi[grid_size];
+    double newton_test_yi[test_grid_size];
     double newton_error = 0;
     {
         const int points_number = lagrange_best_error_index + 1;
@@ -206,7 +206,7 @@ int main() {
             }
         }
 
-        for (int i = 0; i < grid_size; ++i) {
+        for (int i = 0; i < test_grid_size; ++i) {
             newton_test_yi[i] = murlib::newton_polynom(
                 lagrange_xi[lagrange_best_error_index], v, test_xi[i], points_number
             );
@@ -225,8 +225,8 @@ int main() {
     
     /// Тригонометрическая интерполяция
     double trigonometry_error = 10000;
-    double trigonometry_test_yi[grid_size];
-    double trigonometry_error_data[grid_size];
+    double trigonometry_test_yi[test_grid_size];
+    double trigonometry_error_data[test_grid_size];
 
     int trig_degree = 3;
     while (trigonometry_error > delta && trig_degree < 21) {
@@ -239,7 +239,7 @@ int main() {
             trigonometry_yi[i] = individual_func(unnormilize(trigonometry_xi[i]));
         }
         double trigonometry_current_error = 0;
-        for (int i = 0; i < grid_size; ++i) {
+        for (int i = 0; i < test_grid_size; ++i) {
             trigonometry_test_yi[i] = murlib::trigonometric_polynom(normilize(test_xi[i]), trigonometry_xi, trigonometry_yi, trig_degree);
             trigonometry_error_data[i] = (std::abs(trigonometry_test_yi[i] - target_yi[i]));
             if ((std::abs(trigonometry_test_yi[i] - target_yi[i]) > trigonometry_current_error) && (test_xi[i] < unnormilize(trigonometry_xi[trig_point_number-1]))) {
@@ -357,8 +357,8 @@ int main() {
             ImGui::TableNextColumn();
 
             if (ImPlot::BeginPlot("Lagrange Interpolation")) {
-                ImPlot::PlotLine("Ln(x)", test_xi, lagrange_test_yi[current_plot_degree], grid_size);
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
+                ImPlot::PlotLine("Ln(x)", test_xi, lagrange_test_yi[current_plot_degree], test_grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
                 ImPlot::PlotScatter("Grid points", lagrange_xi[current_plot_degree], lagrange_yi[current_plot_degree], current_plot_degree + 1);
                 ImPlot::EndPlot();
             }
@@ -366,56 +366,56 @@ int main() {
             ImGui::TableNextColumn();
 
             if (ImPlot::BeginPlot("Error of lagrange interpolation")) {
-                ImPlot::PlotLine("Error at current degree", test_xi, lagrange_error[current_plot_degree], grid_size);
+                ImPlot::PlotLine("Error at current degree", test_xi, lagrange_error[current_plot_degree], test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Chebyshev roots")) {
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
-                ImPlot::PlotLine("Lagrange on chebyshev roots", test_xi, chebyshev_test_yi, grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
+                ImPlot::PlotLine("Lagrange on chebyshev roots", test_xi, chebyshev_test_yi, test_grid_size);
                 ImPlot::PlotScatter("Grid points", chebyshev_grid_xi, chebyshev_grid_yi, lagrange_best_error_index + 1);
                 ImPlot::EndPlot();
             }
 
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Newton Interpolation")) {
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
-                ImPlot::PlotLine("N_n0(x)", test_xi, newton_test_yi, grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
+                ImPlot::PlotLine("N_n0(x)", test_xi, newton_test_yi, test_grid_size);
                 ImPlot::EndPlot();
             }
 
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Trigonometry interpolation")) {
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
-                ImPlot::PlotLine("trig(x)", test_xi, trigonometry_test_yi, grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
+                ImPlot::PlotLine("trig(x)", test_xi, trigonometry_test_yi, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Trigonometry error")) {
-                ImPlot::PlotLine("Error", test_xi, trigonometry_error_data, grid_size);
+                ImPlot::PlotLine("Error", test_xi, trigonometry_error_data, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Spline interpolation")) {
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
-                ImPlot::PlotLine("S(x)", test_xi, spline_test_yi, grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
+                ImPlot::PlotLine("S(x)", test_xi, spline_test_yi, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("Spline error")) {
-                ImPlot::PlotLine("Error", test_xi, spline_error_data, grid_size);
+                ImPlot::PlotLine("Error", test_xi, spline_error_data, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("MNRP")) {
-                ImPlot::PlotLine("f(x)", test_xi, target_yi, grid_size);
-                ImPlot::PlotLine("Pn", test_xi, P_yi, grid_size);
-                ImPlot::PlotLine("Qm", test_xi, mnrp_result_yi, grid_size);
+                ImPlot::PlotLine("f(x)", test_xi, target_yi, test_grid_size);
+                ImPlot::PlotLine("Pn", test_xi, P_yi, test_grid_size);
+                ImPlot::PlotLine("Qm", test_xi, mnrp_result_yi, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::TableNextColumn();
             if (ImPlot::BeginPlot("MNRP error")) {
-                ImPlot::PlotLine("Error", test_xi, mnrp_error, grid_size);
+                ImPlot::PlotLine("Error", test_xi, mnrp_error, test_grid_size);
                 ImPlot::EndPlot();
             }
             ImGui::EndTable();

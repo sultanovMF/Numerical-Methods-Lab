@@ -9,5 +9,5 @@ namespace murlib {
     double spline_iterpolation(const int n, const double* A, const  double* B, const  double* C, const  double* D, const double* X, const int i, const double t);
     void build_fracrat_system(const int n, const double* x, const double* y, const int p, double* A, double* b);
     double fracrat_interp(const int n, const int p, const double* coef, const double x);
-    void build_least_sqr_coef();
+
 }
