@@ -69,6 +69,7 @@ int main() {
 
     double test_1_xi[grid_size_1];
     build_grid_xi(start_1, end_1, test_1_xi, grid_size_1);
+
     // Рациональная интерполяция
     double fracrat_test_p1_yi[grid_size_1];
     {

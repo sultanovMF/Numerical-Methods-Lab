@@ -1,91 +1,192 @@
 
 #include <iostream>
 #include <functional>
+#include <cmath>
+// Библиотека для рандома
+#include <effolkronium/random.hpp>
 
 #include "murlib/interpolation.h"
 #include "murlib/approximation.h"
 #include "murlib/matrix_solver.h"
 #include "murlib/integration.h"
+#include "murlib/miscellaneous.h"
 
-
-double murlib::integrate_rectangle(const double* x, const double* y, const int n) {
+double murlib::integrate_rectangle(const double* x, const std::function<double(double)> f, const int n) {
 	double result = 0;
 	for (int i = 0; i < n - 1; ++i) {
-		result += y[i] * (x[i + 1] - x[i]);
+		result +=f(x[i]) * (x[i + 1] - x[i]);
 	}
 	return result;
 }
 
-double murlib::integrate_trapezoid(const double* x, const double* y, const int n) {
+double murlib::integrate_trapezoid(const double* x, const std::function<double(double)> f, const int n) {
 	double result = 0;
 	for (int i = 0; i < n - 1; ++i) {
-		result += (y[i] + y[i + 1]) / 2 * (x[i + 1] - x[i]);
+		result += (f(x[i]) + f(x[i + 1])) / 2 * (x[i + 1] - x[i]);
 	}
 	return result;
 }
 
 double murlib::integrate_simpson(const double* x, const std::function<double(double)> f, const int n)
 {
+	double h = x[1] - x[0];
 	double result = 0;
-	for (int i = 0; i < n - 1; ++i) {
-		result += (f(x[i]) + 4. * f((x[i] + x[i + 1]) / 2.) + f(x[i + 1]) / 2. * (x[i + 1] - x[i]));
+	for (int i = 1; i < n; i+= 2) {
+		result += (f(x[i - 1]) + 4 * f(x[i]) + f(x[i + 1]));
 	}
-	result /= 6.;
-	return 0.0;
+
+	// result += (x[i + 1] - x[i]) / 6. * (f(x[i]) + 4. * f((x[i] + x[i + 1]) / 2.) + f(x[i + 1]));
+	return result * h / 3.;
 }
 
 
 
-double murlib::aitken_process(const double a, const double b, const double k, const double h, const std::function<double(double)> f, double& S_1, double& S_2) {
-	const int n_1 = std::ceil((a + b) / h);
-	const int n_2 = std::ceil((a + b) / h / k);
-	const int n_3 = std::ceil((a + b) / h / std::pow(k, 2));
+double murlib::aitken_trapezoid(double start, double end, const int n, const std::function<double(double)> f) {
+	double* xh   = new double[n];
+	double* xh2  = new double[2 * n];
+	double* xh4 = new double[4 * n];
 
-	double* grid_xi_1 = new double[n_1];
-	double* grid_xi_2 = new double[n_2];
-	double* grid_xi_3 = new double[n_3];
+	murlib::build_grid(start, end, xh,  n);
+	murlib::build_grid(start, end, xh2, 2 * n);
+	murlib::build_grid(start, end, xh4, 4 * n);
 
-	double* grid_yi_1 = new double[n_1];
-	double* grid_yi_2 = new double[n_2];
-	double* grid_yi_3 = new double[n_3];
+	double B = (murlib::integrate_trapezoid(xh2, f, 2 * n) - murlib::integrate_trapezoid(xh, f, n))
+		/ (murlib::integrate_trapezoid(xh4, f, 4 * n) - murlib::integrate_trapezoid(xh2, f, n * 2));
 
-	for (int i = 0; i < n_1; ++i) {
-		grid_xi_1[i] = a + (b - a) / n_1 * i;
-		grid_yi_1[i] = f(grid_xi_1[i]);
-	}
-	for (int i = 0; i < n_2; ++i) {
-		grid_xi_2[i] = a + (b - a) / n_2 * i;
-		grid_yi_2[i] = f(grid_xi_2[i]);
-	}
-	for (int i = 0; i < n_3; ++i) {
-		grid_xi_3[i] = a + (b - a) / n_3 * i;
-		grid_yi_3[i] = f(grid_xi_3[i]);
-	}
+	delete[] xh;
+	delete[] xh2;
+	delete[] xh4;
 
-	const double S = murlib::integrate_simpson(grid_xi_1, f, n_1);
-	S_1 = murlib::integrate_simpson(grid_xi_2, f, n_2);
-	S_2 = murlib::integrate_simpson(grid_xi_3, f, n_3);
-
-	const double B = (S_1 - S_2) / (S_2 - S_2);
-
-	delete[] grid_xi_1;
-	delete[] grid_xi_2;
-	delete[] grid_xi_3;
-
-	delete[] grid_yi_1;
-	delete[] grid_yi_2;
-	delete[] grid_yi_3;
-
-	return -log(B) / log(k);
+	return std::log2(B);
 }
-double murlib::aitken_process(const double a, const double b, const double k, const double h, const std::function<double(double)> f) {
-	double S_1, S_2;
-	return murlib::aitken_process(a, b, k, h, f, S_1, S_2);
+
+double murlib::aitken_simpson(double start, double end, const int n, const std::function<double(double)> f) {
+	double* xh = new double[n];
+	double* xh2 = new double[2 * n];
+	double* xh4 = new double[4 * n];
+
+	murlib::build_grid(start, end, xh, n);
+	murlib::build_grid(start, end, xh2, 2 * n);
+	murlib::build_grid(start, end, xh4, 4 * n);
+
+	double B = (murlib::integrate_simpson(xh2, f, 2 * n) - murlib::integrate_simpson(xh, f, n))
+		/ (murlib::integrate_simpson(xh4, f, 4 * n) - murlib::integrate_simpson(xh2, f, n * 2));
+
+	delete[] xh;
+	delete[] xh2;
+	delete[] xh4;
+
+	return std::log2(B);
 }
 
 
-double murlib::runge_method(const double S_1, const double S_2, const double k, const double p) {
-	const double sigma = pow(k, p) / (pow(k, p) - 1);
-	return sigma * S_1 + (1 - sigma) * S_2;
+double murlib::aitken_rectangle(double start, double end, const int n, const std::function<double(double)> f) {
+	double* xh = new double[n];
+	double* xh2 = new double[2 * n];
+	double* xh4 = new double[4 * n];
+
+	murlib::build_grid(start, end, xh, n);
+	murlib::build_grid(start, end, xh2, 2 * n);
+	murlib::build_grid(start, end, xh4, 4 * n);
+
+	double B = (murlib::integrate_rectangle(xh2, f, 2 * n) - murlib::integrate_rectangle(xh, f, n))
+		/ (murlib::integrate_rectangle(xh4, f, 4 * n) - murlib::integrate_rectangle(xh2, f, n * 2));
+
+	delete[] xh;
+	delete[] xh2;
+	delete[] xh4;
+
+	return std::log2(B);
 }
 
+double murlib::runge_rectangle(double start, double end, const int n, const int p, const std::function<double(double)> f) {
+	double sigma = pow(0.5, p) / (pow(0.5, p) - 1);
+	double* xh = new double[n];
+	double* xhk = new double[2 * n];
+
+	murlib::build_grid(start, end, xh, n);
+	murlib::build_grid(start, end, xhk, 2*n);
+	double result = sigma * murlib::integrate_rectangle(xh, f, n) + (1 - sigma) * murlib::integrate_rectangle(xhk, f, 2 * n);
+
+	delete[] xh;
+	delete[] xhk;
+
+	return result;
+}
+
+double murlib::romberg_rectangle(double start, double end, const int n, const int p, const int q, const std::function<double(double)> f) {
+	double* matrix_first  = new double[q * q];
+	double* matrix_second = new double[q * q];
+	double* h = new double[q];
+
+	for (int i = 0; i < q; ++i) {
+		h[i] = (end - start) / (n * (i+1)) ;
+	}
+
+	for (int i = 0; i < q; ++i) {
+		double* xi = new double[n * (i+1)];
+		murlib::build_grid(start, end, xi, n * (i + 1));
+
+		matrix_first[i * q] = murlib::integrate_rectangle(xi, f, n * (i + 1));
+		matrix_second[i * q] = 1.;
+
+		delete[] xi;
+	}
+	for (int i = 0; i < q; ++i) {
+		for (int j = 1; j < q; ++j) {
+			matrix_first [i * q + j] = pow(h[i], p + j - 1);
+			matrix_second[i * q + j] = pow(h[i], p + j - 1);
+		}
+	}
+
+	double result = determinant(q, matrix_first) / determinant(q, matrix_second);
+	delete[] matrix_first;
+	delete[] matrix_second;
+	delete[] h;
+	return result;
+}
+
+double murlib::adaptive_integration(double delta, double start, double end, const int n, double* xi, const std::function<double(double)> f) {
+	double h = (end - start) / 2.;
+	double S = 0.;
+	
+	xi[0] = start;
+	
+	for (int i = 1; i < n; ++i) {
+		xi[i] = xi[i - 1] + h;
+		while (true) {
+			double Itr = h / 2 * (f(xi[i - 1]) + f(xi[i]));
+			double Itr_sost = h / 4 * (f(xi[i - 1]) + 2 * f((xi[i - 1] + xi[i]) / 2.) + f(xi[i]));
+			double eps = 1. / 3. * (Itr_sost - Itr);
+
+
+			if (abs(eps) > h * delta / (end - start)) {
+				h /= 2.;
+				xi[i] = xi[i - 1] + h;
+			}
+			else {
+				xi[i] = xi[i - 1] + h;
+				S += Itr_sost;
+				break;
+			}
+		}
+		if (xi[i] + h > end) {
+			h = end - xi[i];
+		}
+	}
+
+	return S;
+}
+
+double murlib::monte_carlo(double start, double end, const int n, const std::function<double(double)> f) {
+	double result = 0.;
+	{
+		using Random = effolkronium::random_static;
+		for (int i = 0; i < n; ++i) {
+			double randx = Random::get(start, end);
+			result += f(randx);
+		}
+	}
+	return (end - start) * result / n;
+
+}

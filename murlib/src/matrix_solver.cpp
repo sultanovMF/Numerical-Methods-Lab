@@ -47,8 +47,6 @@ void murlib::tridiagonal_matrix(const int n, const double* A, const double* B, c
 	delete[] Q;
 }
 void murlib::solve_gauss(const unsigned int n, double* A, double* b, double* x) {
-	// не учитывает что могут быть пустые строки в матрице
-	// forward
 	for (int i = 0; i < n; ++i) {
 		double pivot = A[i + i * n];
 		if (abs(pivot) < murlib::EPSILON) {
@@ -88,11 +86,10 @@ void murlib::solve_gauss(const unsigned int n, double* A, double* b, double* x) 
 
 	//backward
 	for (int i = n - 1; i >= 0; --i) {
-		x[i] = 0;
+		x[i] = b[i];
 		for (int j = i + 1; j < n; ++j) {
 			x[i] -= A[j + i * n] * x[j];
 		}
-		x[i] += b[i];
 	}
 }
 void murlib::lu_decompostion(const unsigned int n, double* A, double* L, double* U) {
@@ -228,4 +225,31 @@ void murlib::pentadiagonal_matrix(
 	delete[] alpha;
 	delete[] beta;
 	delete[] gamma;
+}
+
+void murlib::inverse(const int n, double* A, double* result) {
+	// TODO testing!
+	double* L = new double[n * n];
+	double* U = new double[n * n];
+
+	murlib::lu_decompostion(n, A, L, U);
+
+	for (int i = 0; i < n; ++i) {
+		double* b = new double[n];
+		std::fill(b, b + n, 0);
+		b[i] = 1;
+
+		double* x = new double[n];
+		
+		murlib::solve_lu(n, L, U, b, x);
+
+		for (int j = 0; j < n; ++j) {
+			result[j * n + i] = x[j];
+		}
+
+		delete[] b;
+	}
+
+	delete[] L;
+	delete[] U;
 }

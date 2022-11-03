@@ -25,7 +25,9 @@ TEST_CASE("gauss elimination system solver") {
                     1,	2,	2 };    
     double b[3] = { 1, 0, 1 };
     double X[3];
+    
     murlib::solve_gauss(3, A, b, X);
+
 
 
     double target_x[] = { -1, 1, 0 };
@@ -172,5 +174,16 @@ TEST_CASE("pentadiagonal matrix") {
     double target_x[n] = { 1, 1, 1, 1, 1, 1 };
     for (int i = 0; i < 3; ++i) {
         CHECK(abs(target_x[i] - X[i]) < EPSILON);
+    }
+}
+
+TEST_CASE("inverse matrix") {
+    const int n = 3;
+    double A[n * n] = { 1, 1, 1, 1, 2, 3, 2, 1, 1 };
+    double X[n * n];
+    murlib::inverse(n, A, X);
+    double target[n * n] = { -1, 0, 1, 5, -1, -2, -3, 1, 1 };
+    for (int i = 0; i < 3; ++i) {
+        CHECK(abs(target[i] - X[i]) < EPSILON);
     }
 }

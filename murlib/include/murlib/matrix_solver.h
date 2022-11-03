@@ -20,4 +20,5 @@ namespace murlib {
 	void sqroot_solve(const unsigned int n, double* S, double* b, double* x);
 
 	void transpose(const unsigned int n, double* A, double* AT);
+	void inverse(const int n, double* A, double* result);
 }
