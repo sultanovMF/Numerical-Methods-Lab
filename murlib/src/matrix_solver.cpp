@@ -253,3 +253,67 @@ void murlib::inverse(const int n, double* A, double* result) {
 	delete[] L;
 	delete[] U;
 }
+
+void murlib::multiply_to_vec(const int n, const double* A, const double* x, double* b) {
+	for (int i = 0; i < n; ++i) {
+		b[i] = 0.;
+		for (int j = 0; j < n; ++j) {
+			b[i] += A[j + i * n] * x[j];
+		}
+	}
+}
+
+void murlib::multiply(const int N, double* A, double* B, double* C) {
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			for (int k = 0; k < N; ++k) {
+				C[i * N + j] += A[i * N + k] * B[k * N + j];
+			}
+		}
+	}
+}
+
+
+///// N - размерность матрицы; A[N][N] - матрица коэффициентов, F[N] - столбец свободных членов,
+///// X[N] - начальное приближение, ответ записывается также в X[N];
+//void Jacobi(int N, double** A, double* F, double* X)
+//{
+//	double* TempX = new double[N];
+//	double norm; // норма, определяемая как наибольшая разность компонент столбца иксов соседних итераций.
+//
+//	do {
+//		for (int i = 0; i < N; i++) {
+//			TempX[i] = F[i];
+//			for (int g = 0; g < N; g++) {
+//				if (i != g)
+//					TempX[i] -= A[i][g] * X[g];
+//			}
+//			TempX[i] /= A[i][i];
+//		}
+//		norm = fabs(X[0] - TempX[0]);
+//		for (int h = 0; h < N; h++) {
+//			if (fabs(X[h] - TempX[h]) > norm)
+//				norm = fabs(X[h] - TempX[h]);
+//			X[h] = TempX[h];
+//		}
+//	} while (norm > eps);
+//	delete[] TempX;
+//}
+
+
+//Inputs: A, b, ω
+//Output : φ
+//
+//Choose an initial guess φ to the solution
+//repeat until convergence
+//	for i from 1 until n do
+//		set σ to 0
+//		for j from 1 until n do
+//			if j ≠ i then
+//				set σ to σ + aij φj
+//			end if
+//		end(j - loop)
+//		set φi to(1 − ω)φi + ω(bi − σ) / aii
+//	end(i - loop)
+//	check if convergence is reached
+//end(repeat)

@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace murlib {
 	void tridiagonal_matrix(const int n, const double* A, const double* B, const double* C, const double* D,  double* X);
 	void pentadiagonal_matrix(
@@ -21,4 +20,6 @@ namespace murlib {
 
 	void transpose(const unsigned int n, double* A, double* AT);
 	void inverse(const int n, double* A, double* result);
+	void multiply(const int n, double* A, double* B, double* C);
+	void multiply_to_vec(const int n, const double* A, const double* x, double* b);
 }

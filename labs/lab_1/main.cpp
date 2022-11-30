@@ -21,7 +21,7 @@
 
 //* Константы и функции индивидуального задания:
 //* Отрезок, на котором происходит интерполяция/аппроксимация
-const double a = 0, b = 2;
+const double a = -1, b = 1;
 //* Рекомендованное значение ошибки
 const double delta = 10e-3;
 //* Размер контрольной сетки
@@ -30,7 +30,8 @@ const int test_grid_size = 1000;
 const int max_points_number = 15;
 //* Функция, которую требуется аппроксимировать
 double individual_func(double x) {
-    return std::atan(x) / (1 + x * x);
+    /*return std::atan(x) / (1 + x * x);*/
+    return std::exp(x * x);
 };
 
 double normilize(const double x) {
